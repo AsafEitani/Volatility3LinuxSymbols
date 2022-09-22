@@ -1,0 +1,10 @@
+FROM distribution
+COPY --from=golang:1.17-buster /usr/local/go/ /usr/local/go/
+ENV PATH="/usr/local/go/bin:${PATH}"
+RUN apt-get update -oAcquire::AllowInsecureRepositories=true && apt-get install git wget ubuntu-dbgsym-keyring -y
+RUN git clone https://github.com/volatilityfoundation/dwarf2json
+RUN cd dwarf2json/ && go mod download github.com/spf13/pflag && go build && cd /
+ADD install_symbols.sh /install_symbols.sh
+RUN chmod +x install_symbols.sh
+RUN export d=$(echo "distribution" | cut -d: -f2); echo "deb http://ddebs.ubuntu.com $d main restricted universe multiverse" > /etc/apt/sources.list.d/ddeb.list; echo "deb http://ddebs.ubuntu.com $d-updates main restricted universe multiverse" >> /etc/apt/sources.list.d/ddeb.list; echo "deb http://ddebs.ubuntu.com $d-proposed main restricted universe multiverse" >> /etc/apt/sources.list.d/ddeb.list
+ENTRYPOINT [ "/install_symbols.sh" ]
